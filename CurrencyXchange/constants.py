@@ -1,0 +1,1 @@
+currency_code_verify_url = "https://restcountries.eu/rest/v2/currency/replace_code_here"
