@@ -1,8 +1,11 @@
+import sys
+
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
-
 from django.http import JsonResponse
+from django.contrib.auth import authenticate
+from CurrencyXchange.utils import generate_token
 
 @csrf_exempt
 def resgistration(request):
@@ -27,4 +30,27 @@ def resgistration(request):
 
     return JsonResponse(response)
 
-    
+@csrf_exempt
+def login(request):
+    response = {"is_success" : False, "response_message" : "" ,"data":"","code" : 401}
+    try:
+        if request.method == "POST":
+            postdata = request.POST
+            email = postdata.get("email")
+            password = postdata.get("password")
+            user_obj = authenticate(username=email,password=password)
+            if user_obj:
+                user_id = user_obj.id
+                token = generate_token(user_id)
+                data = {'token':token}
+                res_dict = {'is_success':True,'code':200,'response_message':"Login Successfully",'data':data}
+            else:
+                res_dict = {'response_message':"Login Failed"}
+            response.update(res_dict)           
+        else:
+            response.update({'code':400,'response_message':'Method Not Allowed'})
+    except Exception as e:
+        response['response_message'] = 'Something Went Wrong'
+        print(e," ERROR IN login --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
+
+    return JsonResponse(response)    
