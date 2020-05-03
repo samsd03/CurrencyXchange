@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('login.urls')),
     path('wallet/', include('wallet.urls')),
+    path('currency/', include('currency.urls')),
 ]

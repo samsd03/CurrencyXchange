@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'login',
     'rest_framework',
     'wallet',
+    'currency',
 ]
 
 MIDDLEWARE = [

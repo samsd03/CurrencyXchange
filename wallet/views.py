@@ -5,8 +5,6 @@ from django.http import JsonResponse
 from CurrencyXchange.utils import decode_token,verify_currency_code
 from django.views.decorators.csrf import csrf_exempt
 
-# Create your views here.
-
 @csrf_exempt
 def create_wallet(request):
     response = {"is_success" : False, "response_message" : "" ,"data":"","code" : 401}
@@ -38,7 +36,6 @@ def create_wallet(request):
         print(e," ERROR IN create_wallet --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
 
     return JsonResponse(response)
-
 
 @csrf_exempt
 def update_wallet(request):
