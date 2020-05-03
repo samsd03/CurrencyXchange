@@ -52,7 +52,7 @@ def update_wallet(request):
                 if verify_currency_code(currency_code):                    
                     wallet_obj = models.UserWallet.objects.filter(user_id=user_id,currency_code=currency_code).first()
                     if wallet_obj:
-                        total_quantity = wallet_obj.currency_quantity + int(currency_quantity)
+                        total_quantity = round(float(wallet_obj.currency_quantity) + float(currency_quantity),2)
                         
                         if total_quantity >= 0:
                             data_dict = {'total_quantity':total_quantity}
@@ -60,7 +60,7 @@ def update_wallet(request):
                             wallet_obj.save()                            
                             res_dict = {'is_success':True,'response_message':'Updated Successfully','code':204,'data':data_dict}
                         else:
-                            data_dict = {'total_quantity':wallet_obj.currency_quantity}
+                            data_dict = {'total_quantity':round(wallet_obj.currency_quantity,2)}
                             res_dict = {'response_message':'Insufficient Quantity','code':400,'data':data_dict}
                     else:
                         res_dict = {'response_message':'Currency Does Not Exist.Please Use Create Method to Create Currency','code':400}

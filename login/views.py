@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from CurrencyXchange.utils import generate_token
+from . import models
+from CurrencyXchange.utils import decode_token
 
 @csrf_exempt
 def resgistration(request):
@@ -54,3 +56,28 @@ def login(request):
         print(e," ERROR IN login --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
 
     return JsonResponse(response)    
+
+@csrf_exempt
+def upload_profile_picture(request):
+    response = {"is_success" : False, "response_message" : "" ,"data":"","code" : 401}
+    try:
+        if request.method == "POST":
+            token = request.headers['token']
+            decode_data = decode_token(token)
+            if decode_data:
+                user_id = decode_data['user_id']
+                postdata = request.POST
+                image = postdata.get("profile_picture")
+                models.UserProfile.objects.create(user_id=user_id,profile_picture=image)
+                res_dict = {'is_success':True,'response_message':"Profile Uploaded Successfully",'code':201}
+                response.update(res_dict)
+            else:
+                response['response_message'] = "Invalid Currency Code"
+        else:
+            response.update({'code':400,'response_message':'Method Not Allowed'})
+    except Exception as e:
+        response['response_message'] = 'Something Went Wrong'
+        print(e," ERROR IN upload_profile_picture --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
+
+    return JsonResponse(response)
+
