@@ -33,6 +33,6 @@ def verify_currency_code(currency_code):
         else:
             return False
     except Exception as e:
-        print(e," ERROR IN decode_token --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
+        print(e," ERROR IN verify_currency_code --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
         return False
 

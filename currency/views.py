@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.contrib.auth.models import User
+from . import models as currency_model
 
 # This will verify if user has sufficient amount of quantity of currency exist.
 def check_user_balance(user_id,currency_code,currency_quantity):
@@ -57,20 +58,32 @@ def transfer_convert_user_currency(to_user_id,add_currency_code,add_currency_qua
     return status
 
 def get_conversion_value(from_currency,from_quantity,to_currency):
-    total_value_after_conversion = False
+    response = False
     try:
         conversion_url = constants.currency_conversion_url
         conversion_url = conversion_url.replace("FROM",from_currency.upper())
         conversion_url = conversion_url.replace("TO",to_currency.upper())
-        print(conversion_url)
         conversion_request = requests.get(conversion_url)
         currency_data = conversion_request.json()
         from_currency_price = currency_data[from_currency+"_"+to_currency]
         total_value_after_conversion = round(float(from_quantity) * from_currency_price,2)
+        response = {'total_converted_quantity':total_value_after_conversion,'price_per_quantity':from_currency_price}
     except Exception as e:
         print(e," ERROR IN transfer_convert_user_currency --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
     
-    return total_value_after_conversion
+    return response
+
+def create_transfer_history(from_user,from_currency,from_quantity,to_user,to_currency,to_currency_price,to_quantity):
+    status = False
+    try:
+        currency_model.CurrencyTransferHistory.objects.create(from_user_id=from_user,from_user_currency=from_currency,\
+            from_user_quantity=from_quantity,to_user_id=to_user,to_user_currency=to_currency,\
+            to_user_currency_price=to_currency_price,to_user_quantity=to_quantity)
+        status = True
+    except Exception as e:
+        print(e," ERROR IN create_transfer_history --line number of error {}".format(sys.exc_info()[-1].tb_lineno))        
+    
+    return True
 
 @csrf_exempt
 def user_currency_conversion(request):
@@ -90,7 +103,8 @@ def user_currency_conversion(request):
                     if quantity_validation['valid'] == True:
                         total_value_after_conversion  = get_conversion_value(from_currency,from_currency_quantity,to_currency)
                         if total_value_after_conversion:
-                            conversion_status = transfer_convert_user_currency(user_id,to_currency,total_value_after_conversion,user_id,from_currency,from_currency_quantity)
+                            total_converted_quantity = total_value_after_conversion['total_converted_quantity']
+                            conversion_status = transfer_convert_user_currency(user_id,to_currency,total_converted_quantity,user_id,from_currency,from_currency_quantity)
                             if conversion_status:
                                 res_dict = {'is_success':True,'response_message':'Converted Successfully','code':200}
                             else:
@@ -133,8 +147,11 @@ def user_currency_transfer(request):
                         if to_user_obj:
                             total_value_after_conversion  = get_conversion_value(from_user_currency,from_user_currency_quantity,to_user_currency)                            
                             if total_value_after_conversion:
-                                transfer_status = transfer_convert_user_currency(to_user_id,to_user_currency,total_value_after_conversion,user_id,from_user_currency,from_user_currency_quantity)
+                                total_converted_quantity = total_value_after_conversion['total_converted_quantity']
+                                transfer_status = transfer_convert_user_currency(to_user_id,to_user_currency,total_converted_quantity,user_id,from_user_currency,from_user_currency_quantity)
                                 if transfer_status:
+                                    price_per_quantity = total_value_after_conversion['price_per_quantity']
+                                    create_transfer_history(user_id,from_user_currency,from_user_currency_quantity,to_user_id,to_user_currency,price_per_quantity,total_converted_quantity)
                                     res_dict = {'is_success':True,'response_message':'Transferred Successfully','code':200}
                                 else:
                                     res_dict = {'response_message':'Transfer Falied'}                                
