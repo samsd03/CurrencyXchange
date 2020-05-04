@@ -124,3 +124,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 CSRF_COOKIE_SECURE = False
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+

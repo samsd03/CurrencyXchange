@@ -1,6 +1,6 @@
 import sys
 import requests
-from CurrencyXchange.utils import decode_token,verify_currency_code
+from CurrencyXchange.utils import decode_token,verify_currency_code,generate_order_invoice
 from CurrencyXchange import constants
 from django.shortcuts import render
 from wallet import models as wallet_model
@@ -74,16 +74,17 @@ def get_conversion_value(from_currency,from_quantity,to_currency):
     return response
 
 def create_transfer_history(from_user,from_currency,from_quantity,to_user,to_currency,to_currency_price,to_quantity):
-    status = False
+    transfer_id = None
     try:
-        currency_model.CurrencyTransferHistory.objects.create(from_user_id=from_user,from_user_currency=from_currency,\
+        transfer_obj = currency_model.CurrencyTransferHistory.objects.create(from_user_id=from_user,from_user_currency=from_currency,\
             from_user_quantity=from_quantity,to_user_id=to_user,to_user_currency=to_currency,\
             to_user_currency_price=to_currency_price,to_user_quantity=to_quantity)
-        status = True
+        
+        transfer_id = transfer_obj.id
     except Exception as e:
         print(e," ERROR IN create_transfer_history --line number of error {}".format(sys.exc_info()[-1].tb_lineno))        
     
-    return True
+    return transfer_id
 
 @csrf_exempt
 def user_currency_conversion(request):
@@ -151,7 +152,9 @@ def user_currency_transfer(request):
                                 transfer_status = transfer_convert_user_currency(to_user_id,to_user_currency,total_converted_quantity,user_id,from_user_currency,from_user_currency_quantity)
                                 if transfer_status:
                                     price_per_quantity = total_value_after_conversion['price_per_quantity']
-                                    create_transfer_history(user_id,from_user_currency,from_user_currency_quantity,to_user_id,to_user_currency,price_per_quantity,total_converted_quantity)
+                                    transfer_id = create_transfer_history(user_id,from_user_currency,from_user_currency_quantity,to_user_id,to_user_currency,price_per_quantity,total_converted_quantity)
+                                    print(transfer_id)
+                                    generate_order_invoice(transfer_id)
                                     res_dict = {'is_success':True,'response_message':'Transferred Successfully','code':200}
                                 else:
                                     res_dict = {'response_message':'Transfer Falied'}                                
