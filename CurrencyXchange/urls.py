@@ -21,4 +21,5 @@ urlpatterns = [
     path('', include('login.urls')),
     path('wallet/', include('wallet.urls')),
     path('currency/', include('currency.urls')),
+    path('analytics/', include('analytics.urls')),
 ]

@@ -65,7 +65,7 @@ def get_conversion_value(from_currency,from_quantity,to_currency):
         conversion_url = conversion_url.replace("TO",to_currency.upper())
         conversion_request = requests.get(conversion_url)
         currency_data = conversion_request.json()
-        from_currency_price = currency_data[from_currency+"_"+to_currency]
+        from_currency_price = round(currency_data[from_currency+"_"+to_currency],2)
         total_value_after_conversion = round(float(from_quantity) * from_currency_price,2)
         response = {'total_converted_quantity':total_value_after_conversion,'price_per_quantity':from_currency_price}
     except Exception as e:

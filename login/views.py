@@ -72,7 +72,7 @@ def upload_profile_picture(request):
                 res_dict = {'is_success':True,'response_message':"Profile Uploaded Successfully",'code':201}
                 response.update(res_dict)
             else:
-                response['response_message'] = "Invalid Currency Code"
+                response['response_message'] = "Token Validation Error"
         else:
             response.update({'code':400,'response_message':'Method Not Allowed'})
     except Exception as e:
