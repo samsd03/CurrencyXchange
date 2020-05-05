@@ -20,9 +20,13 @@ def resgistration(request):
             last_name = postdata.get("last_name")
             email = postdata.get("email")
             password = postdata.get("password")
-            user = User.objects.create_user(username=email,email=email,first_name=first_name,\
-                   last_name=last_name,password=password)        
-            res_dict = {'is_success':True,'response_message':"User Registered Successfully",'code':201}
+            user_exist = User.objects.filter(username=email).first()
+            if not user_exist:
+                user = User.objects.create_user(username=email,email=email,first_name=first_name,\
+                    last_name=last_name,password=password)        
+                res_dict = {'is_success':True,'response_message':"User Registered Successfully",'code':201}
+            else:
+                res_dict = {'response_message':'User already exist with this email id'}
             response.update(res_dict)           
         else:
             response.update({'code':400,'response_message':'Method Not Allowed'})
