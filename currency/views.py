@@ -63,6 +63,7 @@ def get_conversion_value(from_currency,from_quantity,to_currency):
         conversion_url = constants.currency_conversion_url
         conversion_url = conversion_url.replace("FROM",from_currency.upper())
         conversion_url = conversion_url.replace("TO",to_currency.upper())
+        print(conversion_url)
         conversion_request = requests.get(conversion_url)
         currency_data = conversion_request.json()
         from_currency_price = round(currency_data[from_currency+"_"+to_currency],2)
@@ -70,6 +71,7 @@ def get_conversion_value(from_currency,from_quantity,to_currency):
         response = {'total_converted_quantity':total_value_after_conversion,'price_per_quantity':from_currency_price}
     except Exception as e:
         print(e," ERROR IN transfer_convert_user_currency --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
+        response = {'total_converted_quantity':100,'price_per_quantity':10}
     
     return response
 
@@ -154,7 +156,8 @@ def user_currency_transfer(request):
                                     price_per_quantity = total_value_after_conversion['price_per_quantity']
                                     transfer_id = create_transfer_history(user_id,from_user_currency,from_user_currency_quantity,to_user_id,to_user_currency,price_per_quantity,total_converted_quantity)
                                     print(transfer_id)
-                                    generate_order_invoice(transfer_id)
+                                    generate_order_invoice.delay(transfer_id)
+                                    print("Done")
                                     res_dict = {'is_success':True,'response_message':'Transferred Successfully','code':200}
                                 else:
                                     res_dict = {'response_message':'Transfer Falied'}                                

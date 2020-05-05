@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'wallet',
     'currency',
     'analytics',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -129,3 +130,25 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+# Email Setup 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get('user_email')
+EMAIL_HOST_PASSWORD = os.environ.get('email_password')
+
+
+# CELERY SETTINGS
+
+# Celery settings
+CELERY_BROKER_URL = "amqp://"
+
+# for security reasons, mention the list of accepted content-types (in this case json)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+CELERY_TIMEZONE = 'Europe/Berlin'
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

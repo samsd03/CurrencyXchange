@@ -7,6 +7,11 @@ import datetime
 from CurrencyXchange.generate_order_pdf import order_inv
 from CurrencyXchange import constants
 from currency.models import CurrencyTransferHistory
+from django.core.mail import EmailMessage
+from django.conf import settings
+from celery.task.schedules import crontab
+from celery.decorators import periodic_task
+from celery import shared_task
 
 SECRET_KEY = os.environ.get('secret_key')
 
@@ -38,18 +43,38 @@ def verify_currency_code(currency_code):
     except Exception as e:
         print(e," ERROR IN verify_currency_code --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
         return False
-#order_id,date,name,from_currency,from_currency_quantity,to_currency
+
+
+def send_email_to_user(subject,message,from_email,to_email_list,attachment_path):
+    sent = False
+    try:
+        email = EmailMessage(
+            subject, message, from_email, to_email_list)
+        email.attach_file(attachment_path)
+        email.send()
+        sent = True
+    except Exception as e:
+        print(e," ERROR IN send_email_to_user --line number of error {}".format(sys.exc_info()[-1].tb_lineno))                    
+ 
+    return sent
+
+@shared_task
 def generate_order_invoice(order_id):
     try:
-        print(order_id)
         transfer_obj = CurrencyTransferHistory.objects.get(id=order_id)
         name = transfer_obj.to_user.get_full_name()
-        print(name)
         from_currency = transfer_obj.from_user_currency
         from_currency_quantity = transfer_obj.from_user_quantity
         to_currency = transfer_obj.to_user_currency
         current_time = datetime.datetime.now() 
         invoice_path = order_inv(order_id,current_time,name,from_currency,from_currency_quantity,to_currency)
+        subject = "Order Invoice"
+        message = "Your Order has been placed Successfully"
+        from_email = settings.EMAIL_HOST_USER
+        to_email_list = [transfer_obj.to_user.username]
+        attached_file_path = invoice_path
+        send_email_to_user(subject,message,from_email,to_email_list,attached_file_path)
+        print("Celery Finished")
 
     except Exception as e:
         print(e," ERROR IN generate_order_invoice --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
