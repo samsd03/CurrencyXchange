@@ -1,6 +1,7 @@
 # CurrencyXchange
 ABOUT: 
 This app is basically currency exchange app . User can add,update,convert and transfer currency. JWT token is used for authentication of user . Api of analytics have made in this app . User will get monthly transaction report via scheduling using celery beat .
+sqlite is used as a database .
 
 
 ASSUMPTIONS: 
