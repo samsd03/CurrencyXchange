@@ -4,7 +4,8 @@ import sys
 import json
 import requests
 import datetime
-from CurrencyXchange.generate_order_pdf import order_inv
+import calendar
+from CurrencyXchange.generate_order_pdf import order_inv,transfer_statement_pdf
 from CurrencyXchange import constants
 from currency.models import CurrencyTransferHistory
 from django.core.mail import EmailMessage
@@ -12,6 +13,8 @@ from django.conf import settings
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
 from celery import shared_task
+from django.db.models import Sum
+
 
 SECRET_KEY = os.environ.get('secret_key')
 
@@ -78,4 +81,31 @@ def generate_order_invoice(order_id):
 
     except Exception as e:
         print(e," ERROR IN generate_order_invoice --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
-        return False
+
+@periodic_task(run_every=(crontab()),name="monthly_transaction_statement")
+def monthly_transaction_statement():
+    try:
+        today = datetime.datetime.today()
+        month = today.month
+        year = today.year
+        _,last_day = calendar.monthrange(year,month)
+        print(today.day,last_day)
+        if int(today.day) == int(last_day):
+            first_day = datetime.datetime.strptime(today.replace(day=1).strftime('%Y-%m-%d'),'%Y-%m-%d').date()
+            first_day_words = first_day.strftime('%d %B %Y')
+            last_day  = datetime.datetime.strptime(datetime.date(year, month, last_day).strftime('%Y-%m-%d'),'%Y-%m-%d').date()
+            last_day_words = last_day.strftime('%d %B %Y')
+            unique_user_obj = CurrencyTransferHistory.objects.filter().values('from_user_id','from_user__username',\
+                'from_user__first_name','from_user__last_name').distinct()
+            for user in unique_user_obj:
+                user_email = user['from_user__username']
+                name = user['from_user__first_name'] + " " + user['from_user__last_name']
+                total_transaction = CurrencyTransferHistory.objects.filter(event_time__date__gte=str(first_day),event_time__date__lte=str(last_day),from_user_id=user['from_user_id']).count()            
+                total_quantity_obj = CurrencyTransferHistory.objects.filter(event_time__date__gte=str(first_day),event_time__date__lte=str(last_day),from_user_id=user['from_user_id']).aggregate(Sum('from_user_quantity'))
+                total_quantity = round(float(total_quantity_obj['from_user_quantity__sum']),2)
+                transfer_statement_pdf(user_email,name,first_day_words,last_day_words,total_transaction,total_quantity)
+        else:
+            print("Not Running")
+
+    except Exception as e:
+        print(e," ERROR IN monthly_transaction_statement --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
