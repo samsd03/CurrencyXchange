@@ -82,14 +82,14 @@ def generate_order_invoice(order_id):
     except Exception as e:
         print(e," ERROR IN generate_order_invoice --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
 
-@periodic_task(run_every=(crontab()),name="monthly_transaction_statement")
+# This function will run every day but it will send report only on last day of the month .
+@periodic_task(run_every=(crontab(hour=23, minute=55)),name="monthly_transaction_statement")
 def monthly_transaction_statement():
     try:
         today = datetime.datetime.today()
         month = today.month
         year = today.year
         _,last_day = calendar.monthrange(year,month)
-        print(today.day,last_day)
         if int(today.day) == int(last_day):
             first_day = datetime.datetime.strptime(today.replace(day=1).strftime('%Y-%m-%d'),'%Y-%m-%d').date()
             first_day_words = first_day.strftime('%d %B %Y')
@@ -103,9 +103,12 @@ def monthly_transaction_statement():
                 total_transaction = CurrencyTransferHistory.objects.filter(event_time__date__gte=str(first_day),event_time__date__lte=str(last_day),from_user_id=user['from_user_id']).count()            
                 total_quantity_obj = CurrencyTransferHistory.objects.filter(event_time__date__gte=str(first_day),event_time__date__lte=str(last_day),from_user_id=user['from_user_id']).aggregate(Sum('from_user_quantity'))
                 total_quantity = round(float(total_quantity_obj['from_user_quantity__sum']),2)
-                transfer_statement_pdf(user_email,name,first_day_words,last_day_words,total_transaction,total_quantity)
-        else:
-            print("Not Running")
-
+                pdf_path = transfer_statement_pdf(user_email,name,first_day_words,last_day_words,total_transaction,total_quantity)
+                subject = "Transaction Statement"
+                message = "Your Monthly Transaction Information ."
+                from_email = settings.EMAIL_HOST_USER
+                to_email_list = [user_email]
+                attached_file_path = pdf_path
+                send_email_to_user(subject,message,from_email,to_email_list,attached_file_path)                
     except Exception as e:
         print(e," ERROR IN monthly_transaction_statement --line number of error {}".format(sys.exc_info()[-1].tb_lineno))            
