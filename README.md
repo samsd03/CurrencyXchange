@@ -15,3 +15,7 @@ SET UP PROCESS -
 5. set secret key in environment variable (key - secret_key)
 6. celery and rabbimq is used for scheduling of task and asynchronous task .
 7. Use postman collection to see all apis given in the root folder(replace api key generated after login of user)
+
+
+NOTE:
+Scheduler of monthly transaction is added in CurrencyXchange/utils.py

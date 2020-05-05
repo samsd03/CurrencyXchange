@@ -105,7 +105,7 @@ def profit_loss_money_transfer(request):
             response.update({'code':400,'response_message':'Method Not Allowed'})
     except Exception as e:
         response['response_message'] = 'Something Went Wrong'
-        print(e," ERROR IN resgistration --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
+        print(e," ERROR IN profit_loss_money_transfer --line number of error {}".format(sys.exc_info()[-1].tb_lineno))    
 
     return JsonResponse(response)
 
